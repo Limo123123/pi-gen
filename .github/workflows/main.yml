@@ -13,7 +13,7 @@ on:
       pi_gen_branch:
         description: 'pi-gen branch/tag to use (e.g., arm64, master, v1.8.1)'
         required: true
-        default: 'master'
+        default: 'arm64'
       img_name:
         description: 'Image name (e.g., MyCustomPi)'
         required: false

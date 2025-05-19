@@ -15,11 +15,10 @@ jobs:
         run: chmod +x build-docker.sh
 
       - name: Run pi-gen build
-        run: |
-          sudo build-docker.sh
+        run: bash ./build-docker.sh
           
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: pi-gen-image
-          path: deploy/*.img
+          path: deploy/*.zip

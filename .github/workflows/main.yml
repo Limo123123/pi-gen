@@ -15,7 +15,7 @@ jobs:
         run: chmod +x build-docker.sh
 
       - name: Run pi-gen build
-        run: bash ./build-docker.sh
+        run: ./build-docker.sh
           
       - name: Upload build artifact
         uses: actions/upload-artifact@v4

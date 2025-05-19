@@ -137,6 +137,10 @@ jobs:
             echo "Copying custom stage5..."
             cp -r "${{ github.workspace }}/stage5" pi-gen-build/
           fi
+          if [ -d "${{ github.workspace }}/stage6" ]; then
+            echo "Copying custom stage5..."
+            cp -r "${{ github.workspace }}/stage6" pi-gen-build/
+          fi
           # Add more for other custom stages as needed
 
       - name: Build the image

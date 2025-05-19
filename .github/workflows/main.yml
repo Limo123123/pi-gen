@@ -16,7 +16,7 @@ jobs:
 
       - name: Run pi-gen build
         run: |
-          sudo ./build-docker.sh
+          sudo build-docker.sh
           
       - name: Upload build artifact
         uses: actions/upload-artifact@v4

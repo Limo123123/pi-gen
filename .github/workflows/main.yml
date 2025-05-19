@@ -11,9 +11,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Make build script executable
-        run: chmod +x build-docker.sh
-
       - name: Run pi-gen build
         run: ./build-docker.sh
           

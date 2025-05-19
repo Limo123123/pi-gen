@@ -69,7 +69,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             quilt parted qemu-user-static debootstrap zerofree \
-            zip dosfstools libarchive-tools git bc 
+            zip dosfstools libarchive-tools git bc arch-test
             # Add any other specific dependencies your custom stages might need
 
       - name: Clone pi-gen

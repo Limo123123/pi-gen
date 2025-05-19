@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=LimOS Plasma (Wayland)
+Comment=Plasma Desktop using Wayland on LimOS
+Exec=startplasma-wayland
+TryExec=startplasma-wayland
+Type=Application
+DesktopNames=KDE

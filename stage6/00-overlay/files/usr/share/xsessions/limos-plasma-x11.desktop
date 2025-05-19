@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=LimOS Plasma (X11)
+Comment=Plasma Desktop using X11 on LimOS
+Exec=startplasma-x11
+TryExec=startplasma-x11
+Type=Application
+DesktopNames=KDE

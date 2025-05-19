@@ -1,0 +1,9 @@
+[Plymouth Theme]
+Name=LimOS Splash
+Description=LimOS Boot Splash
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/limos/images
+ScriptFile=/usr/share/plymouth/themes/limos/limos.script
+

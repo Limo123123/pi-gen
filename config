@@ -1,0 +1,22 @@
+IMG_NAME='LimOS'  # Name der finalen Image-Datei und des Systems
+RELEASE='bookworm'  # Debian-Release (stable)
+
+LOCALE_DEFAULT="de_DE.UTF-8"
+KEYBOARD_KEYMAP="de"
+KEYBOARD_LAYOUT="de"
+TIMEZONE_DEFAULT="Europe/Berlin"
+
+FIRST_USER_NAME="pi"
+FIRST_USER_PASS="limos"
+DISABLE_FIRST_BOOT_USER_RENAME=1
+
+WPA_COUNTRY="DE"
+ENABLE_SSH=1
+
+PI_GEN_REPO="https://github.com/RPi-Distro/pi-gen"
+PI_GEN_RELEASE="LimOS Custom Build"
+
+STAGE_LIST="stage0 stage1 stage2 stage3 stage4 stage6"
+
+CONTINUE=1
+PRESERVE_CONTAINER=1

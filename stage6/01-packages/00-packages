@@ -1,0 +1,37 @@
+# Basis X-Server (für Fallback)
+xserver-xorg
+xserver-xorg-video-fbdev
+
+# KDE Plasma Wayland Session und Desktop
+plasma-workspace-wayland
+kwin-wayland
+kde-full
+
+# Wayland-Protokolle und Bibliotheken
+wayland-protocols
+libwayland-client0
+libwayland-server0
+
+# Display Manager
+sddm
+
+# Nützliche KDE-Tools (optional, kannst du anpassen)
+konsole
+dolphin
+kate
+
+# Sonstiges (Locale etc. falls nötig)
+locales
+keyboard-configuration
+plymouth
+plymouth-themes
+plasma-nm
+plasma-pa
+mesa-utils
+vim
+nano
+git
+
+# Optional für Touchpad-Konfiguration
+libinput-tools
+

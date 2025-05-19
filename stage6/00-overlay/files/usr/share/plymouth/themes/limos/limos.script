@@ -1,0 +1,18 @@
+// Bildschirmgröße abfragen
+screen_width = Window.GetWidth();
+screen_height = Window.GetHeight();
+
+// Bild laden
+logo = Image("logo.png");
+
+// Bild zentrieren
+logo.SetPosition(screen_width / 2 - logo.GetWidth() / 2,
+                 screen_height / 2 - logo.GetHeight() / 2);
+
+// Hintergrundfarben setzen (Grünverlauf)
+Window.SetBackgroundTopColor(0.1, 0.3, 0.1);      // dunkleres Grün oben
+Window.SetBackgroundBottomColor(0.2, 0.6, 0.2);   // helleres Grün unten
+
+// Bild anzeigen
+logo.Show();
+

@@ -1,0 +1,8 @@
+#!/bin/bash
+echo "Willkommen zu LimOS!"
+echo "Version: 1.0 'Spritzig'"
+echo
+echo "Verfügbare Befehle:"
+echo "  limos update      - System aktualisieren"
+echo "  limos info        - Systeminformationen"
+echo "  limos about       - Über LimOS"

@@ -1,21 +1,181 @@
-name: Build Pi Image with pi-gen
+name: Build Raspberry Pi Image with pi-gen
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main # Or your default branch
+    paths: # Optional: Trigger only if pi-gen related files change
+      - 'config'
+      - 'stage*' # If you have custom stages in your repo
+      - '.github/workflows/build-pi-image.yml'
+  workflow_dispatch: # Allows manual triggering with inputs
+    inputs:
+      pi_gen_branch:
+        description: 'pi-gen branch/tag to use (e.g., arm64, master, v1.8.1)'
+        required: true
+        default: 'master'
+      img_name:
+        description: 'Image name (e.g., MyCustomPi)'
+        required: false
+        default: 'RaspberryPi' # pi-gen default
+      release:
+        description: 'Debian release (e.g., bookworm, bullseye)'
+        required: false
+        default: 'bookworm' # pi-gen default might change, specify for consistency
+      stage_list:
+        description: 'Space-separated list of stages to build (e.g., "stage0 stage1 stage2")'
+        required: false
+        default: '' # Empty means pi-gen default (usually up to stage2 or stage3)
+      custom_config_path:
+        description: 'Path to custom pi-gen config file in your repo (e.g., pi-gen-config/my-config)'
+        required: false
+        default: 'config' # Assumes 'config' at the root of your repo
+      target_hostname:
+        description: 'Hostname for the image'
+        required: false
+        default: 'raspberrypi'
+      enable_ssh:
+        description: 'Enable SSH (0 or 1)'
+        required: false
+        default: '0' # Default is usually disabled for security
+      upload_img_files:
+        description: 'Upload raw .img files in addition to .zip files (true/false)'
+        required: false
+        default: 'false'
 
 jobs:
-  build:
+  build_image:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false # If you plan to build multiple configurations
 
     steps:
-      - name: Checkout repository
+      - name: Checkout your repository
         uses: actions/checkout@v4
 
-      - name: Run pi-gen build
-        run: ./build-docker.sh
-          
-      - name: Upload build artifact
+      - name: Free up disk space
+        run: |
+          echo "Initial disk space:"
+          df -h
+          sudo rm -rf /usr/share/dotnet # Free up ~10GB
+          sudo rm -rf /opt/ghc # Free up ~2GB
+          sudo rm -rf /usr/local/share/boost # Free up ~1GB
+          sudo docker image prune -af # Free up Docker image cache
+          echo "Disk space after cleanup:"
+          df -h
+
+      - name: Install pi-gen dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            quilt parted realpath qemu-user-static debootstrap zerofree \
+            zip dosfstools bsdtar libarchive-tools git bc \
+            # Add any other specific dependencies your custom stages might need
+
+      - name: Clone pi-gen
+        run: |
+          git clone --depth 1 --branch "${{ github.event.inputs.pi_gen_branch || 'master' }}" https://github.com/RPi-Distro/pi-gen.git pi-gen-build
+          cd pi-gen-build
+          echo "Using pi-gen from commit: $(git rev-parse HEAD)"
+
+      - name: Prepare pi-gen config
+        run: |
+          cd pi-gen-build
+          # 1. Copy custom config file from your repo if it exists
+          CUSTOM_CONFIG_FILE="${{ github.workspace }}/${{ github.event.inputs.custom_config_path || 'config' }}"
+          if [ -f "$CUSTOM_CONFIG_FILE" ]; then
+            echo "Using custom config from $CUSTOM_CONFIG_FILE"
+            cp "$CUSTOM_CONFIG_FILE" ./config
+          else
+            echo "No custom config file found at $CUSTOM_CONFIG_FILE. Using pi-gen defaults or environment variables."
+            # Create a minimal config if one doesn't exist and no inputs are provided for IMG_NAME/RELEASE
+            # This ensures build.sh doesn't complain if no config is present.
+            # However, pi-gen's build.sh usually sources a default if 'config' is missing.
+            # The environment variables below will override any defaults or values in a copied config.
+          fi
+
+          # 2. Set environment variables for pi-gen from workflow inputs
+          # These will override values in the config file if set
+          if [ -n "${{ github.event.inputs.img_name }}" ]; then
+            echo "Setting IMG_NAME=${{ github.event.inputs.img_name }}"
+            echo "IMG_NAME='${{ github.event.inputs.img_name }}'" >> ./config
+          fi
+          if [ -n "${{ github.event.inputs.release }}" ]; then
+            echo "Setting RELEASE=${{ github.event.inputs.release }}"
+            echo "RELEASE='${{ github.event.inputs.release }}'" >> ./config
+          fi
+          if [ -n "${{ github.event.inputs.stage_list }}" ]; then
+            echo "Setting STAGE_LIST=${{ github.event.inputs.stage_list }}"
+            # STAGE_LIST is usually passed as an env var directly to build.sh
+          fi
+          if [ -n "${{ github.event.inputs.target_hostname }}" ]; then
+            echo "Setting TARGET_HOSTNAME=${{ github.event.inputs.target_hostname }}"
+            echo "TARGET_HOSTNAME='${{ github.event.inputs.target_hostname }}'" >> ./config
+          fi
+          if [ -n "${{ github.event.inputs.enable_ssh }}" ]; then
+            echo "Setting ENABLE_SSH=${{ github.event.inputs.enable_ssh }}"
+            echo "ENABLE_SSH='${{ github.event.inputs.enable_ssh }}'" >> ./config
+          fi
+
+          echo "--- Final effective config (./pi-gen-build/config) ---"
+          cat ./config || echo "No ./config file, pi-gen will use internal defaults or env vars."
+          echo "------------------------------------------------------"
+
+      - name: Copy custom stages (if any)
+        run: |
+          # If you have custom stages like 'stageX' in your repo root, copy them
+          # Adjust the path if your stages are in a subdirectory
+          if [ -d "${{ github.workspace }}/stage3" ]; then
+            echo "Copying custom stage3..."
+            cp -r "${{ github.workspace }}/stage3" pi-gen-build/
+          fi
+          if [ -d "${{ github.workspace }}/stage4" ]; then
+            echo "Copying custom stage4..."
+            cp -r "${{ github.workspace }}/stage4" pi-gen-build/
+          fi
+          if [ -d "${{ github.workspace }}/stage5" ]; then
+            echo "Copying custom stage5..."
+            cp -r "${{ github.workspace }}/stage5" pi-gen-build/
+          fi
+          # Add more for other custom stages as needed
+
+      - name: Build the image
+        env:
+          # Pass STAGE_LIST directly as an environment variable to build.sh
+          # This is often how pi-gen expects it for overriding the config.
+          STAGE_LIST: "${{ github.event.inputs.stage_list }}"
+        run: |
+          cd pi-gen-build
+          # Set PIGEN_VERBOSITY to 1 for more detailed logs
+          PIGEN_VERBOSITY=1 sudo ./build.sh
+          # For Docker-based build (slower, but more isolated):
+          # PIGEN_VERBOSITY=1 ./build-docker.sh
+
+      - name: List deployment files
+        run: |
+          ls -lh pi-gen-build/deploy/
+
+      - name: Upload build artifacts (zip)
         uses: actions/upload-artifact@v4
         with:
-          name: pi-gen-image
-          path: deploy/*.zip
+          name: raspberry-pi-image-zip
+          path: |
+            pi-gen-build/deploy/*.zip
+            pi-gen-build/build.log
+            pi-gen-build/config
+          if-no-files-found: error # Fail if no zip files are found
+
+      - name: Upload build artifacts (img - optional)
+        if: github.event.inputs.upload_img_files == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: raspberry-pi-image-img
+          path: |
+            pi-gen-build/deploy/*.img
+          if-no-files-found: warn # Warn if no img files are found (might be intentional)
+
+      - name: Summarize disk space after build
+        if: always() # Run even if previous steps fail
+        run: |
+          echo "Disk space after build and artifact upload:"
+          df -h
